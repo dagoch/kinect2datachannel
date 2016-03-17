@@ -1,5 +1,7 @@
 # kinect2datachannel
-Send Kinect v2 skeleton info to js web pages using WebRTC DataChannels
+Send Kinect v2 skeleton info to js web pages using WebRTC DataChannels.
+
+Based largely on Shawn Van Every's Microstories project: https://github.com/vanevery/microstorieslive_act2
 
 How to Use
 ==========
@@ -15,3 +17,5 @@ You will see a new node-webkit app open, and a kinect skeleton stick figure mirr
 6. In your web browser, go to:  `localhost:8080/skeleton.html`  (or use whatever port the server is listening on, if you've changed it.)
 You should see the same kinect skeleton stick figure.
 If your local network allows it, you can determine the ip address of your machine, and access the same page from other computers, so you can get the same kinect information simultaneously in multiple places.
+
+For more information about node-webkit, go to http://nwjs.io.
