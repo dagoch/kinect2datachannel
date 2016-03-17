@@ -1,0 +1,347 @@
+<html>
+	<head>
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+				<script src="js/peer.min.js"></script>
+		<script type="text/javascript">
+			var joints = [];
+			var drawing = [];
+
+			var socket = io.connect();
+
+			var mypeerid = null;
+		  var peer = null;
+		  var connection = null;
+
+			var showlog = function(content) {
+					document.getElementById('log').innerHTML += "<pre>"+content+"</pre>\n";
+				};
+
+			//peer = new Peer({host: 'liveweb.itp.io', port: 9000, path: '/'})
+peer = new Peer({key: 'uohu08l7r6swcdi'});
+			peer.on('open', function(id) {
+				console.log('My peer ID is: ' + id);
+				showlog('My peer ID is: ' + id);
+				mypeerid = id;
+			});
+
+			peer.on('connection', function(conn) {
+				connection = conn;
+				connection.on('open', function() {
+					document.getElementById('chatlog').innerHTML += "Connection Established";
+				});
+				connection.on('data', function(data) {
+					document.getElementById('chatlog').innerHTML += data;
+				});
+			});
+
+var kinectPeerId = "kinect";
+			connection = peer.connect(kinectPeerId); // get a webrtc DataConnection
+			connection.on('open', function(data) {
+				document.getElementById('chatlog').innerHTML += " CLIENT Connection Established";
+				console.log("OPen data connection with client");
+				showlog("OPen data connection with client");
+			});
+
+			connection.on('data', function(data) {
+				//document.getElementById('chatlog').innerHTML += " From client:" +data;
+				// this is kinect data
+//				console.log("got kinect data: "+data);
+				joints[data.position] = {x: (data.x)*canvas.width/2+canvas.width/2,
+									y: (data.y*-1)*canvas.height/2+canvas.height/2};
+
+			});
+
+
+			socket.on('connect', function() {
+				console.log("Connected");
+			});
+
+			// Receive mouse
+			socket.on('mouse', function (data) {
+				draw(data.startX, data.startY, data.endX, data.endY);
+				//drawing.push(data);
+			});
+
+			var sendmouse = function(startX, startY, endX, endY) {
+				socket.emit('mouse', {startX: startX, startY: startY, endX: endX, endY: endY, color: color});
+			};
+			var sendText = function(textToSend, x, y) {
+				socket.emit('text', {text: textToSend, x: x, y: y, color: color});
+			};
+
+			socket.on('clear', function (data) {
+				clearDrawing();
+			});
+
+			socket.on('kinect', function (data) {
+				joints[data.position] = {x: (data.x)*canvas.width/2+canvas.width/2,
+									y: (data.y*-1)*canvas.height/2+canvas.height/2};
+			});
+
+			///////////////
+			var mousecanvas;
+			var mousecontext;
+			var canvas;
+			var context;
+			var x = -1;
+			var y = -1;
+			var px = -1;
+			var py = -1;
+			var mousedown = false;
+
+			var color = "rgb("+
+			  Math.floor(Math.random()*128+127)+","+
+			  Math.floor(Math.random()*128+127)+","+
+			  Math.floor(Math.random()*128+127)+")";
+
+			var initcanvas = function() {
+				mousecanvas = document.getElementById('mymousecanvas');
+				mousecontext = mousecanvas.getContext('2d');
+
+				canvas = document.getElementById('mycanvas');
+				context = canvas.getContext('2d');
+
+				//context.fillStyle="#000000";
+				//context.fillRect(0,0,canvas.width,canvas.height);
+
+				canvas.addEventListener("touchstart", function(evt) {
+                                        // Get the canvas bounding rect
+                                        var canvasRect = canvas.getBoundingClientRect();
+
+                                        // Now calculate the mouse position values
+					if (evt.targetTouches.length == 1) {
+						evt.preventDefault();
+    						var touch = evt.targetTouches[0];
+						py = touch.pageY - canvasRect.top;
+						px = touch.pageX - canvasRect.left;
+                                        	mousedown = true;
+  					}
+
+				}, false);
+
+  				canvas.addEventListener("touchend", function(evt) {
+					mousedown = false;
+				}, false);
+
+  				canvas.addEventListener("touchmove", function(evt) {
+                                        //evt.clientX is x but in the entire window, not the canvas
+                                        //evt.clientY is y
+
+                                        // Get the canvas bounding rect
+                                        var canvasRect = canvas.getBoundingClientRect();
+
+					// Now calculate the mouse position values
+                                        if (evt.targetTouches.length == 1) {
+						evt.preventDefault();
+                                                var touch = evt.targetTouches[0];
+                                                y = touch.pageY - canvasRect.top;
+                                                x = touch.pageX - canvasRect.left;
+                                                mousedown = true;
+                                                sendmouse(px, py, x, y);
+                                                draw(px - joints[3].x, py - joints[3].y, x - joints[3].x, y - joints[3].y);
+                                                px = x;
+                                                py = y;
+                                        }
+                                }, false);
+
+				canvas.addEventListener('mousedown', function(evt) {
+					// Get the canvas bounding rect
+					var canvasRect = canvas.getBoundingClientRect();
+					// Now calculate the mouse position values
+					py = evt.clientY - canvasRect.top; // minus the starting point of the canvas rect
+					px = evt.clientX - canvasRect.left;  // minus the starting point of the canvas rect on the x axis
+					mousedown = true;
+				});
+
+				canvas.addEventListener('mouseup', function(evt) {
+					mousedown = false;
+				});
+
+				canvas.addEventListener('mousemove', function(evt) {
+					//evt.clientX is x but in the entire window, not the canvas
+					//evt.clientY is y
+
+					// Get the canvas bounding rect
+					var canvasRect = canvas.getBoundingClientRect();
+					// Now calculate the mouse position values
+					y = evt.clientY - canvasRect.top; // minus the starting point of the canvas rect
+					x = evt.clientX - canvasRect.left;  // minus the starting point of the canvas rect on the x axis
+
+					//console.log("mousemove " + evt.clientX + " " + evt.clientY);
+					if (mousedown) {
+						//console.log("mousemove x:" + x + " y:" + y);
+						sendmouse(px, py, x, y);
+						draw(px - joints[3].x, py - joints[3].y, x - joints[3].x, y - joints[3].y);
+						px = x;
+						py = y;
+					}
+				}, false);
+			};
+
+			var draw = function(startX, startY, endX, endY) {
+				drawing.push({startX: startX, startY: startY, endX: endX, endY: endY});
+
+			};
+
+			var clearDrawing = function() {
+				context.clearRect(0,0,canvas.width,canvas.height);
+				context.beginPath();
+				context.strokeStyle=color;
+				context.fillStyle=color;
+				context.lineWidth = 5;
+
+				/*
+				var lastJoint = null;
+				for (var i = 0; i < joints.length; i++) {
+					if (joints[i] != null) {
+						if (lastJoint == null) {
+							context.moveTo(joints[i].x,joints[i].y);
+							context.fillText(i,joints[i].x-5,joints[i].y-5);
+						}
+						else {
+							context.lineTo(joints[i].x,joints[i].y);
+							context.fillText(i,joints[i].x-5,joints[i].y-5);
+						}
+						lastJoint = joints[i];
+					}
+				}
+				*/
+
+				/*
+				if (data.position == 3) {
+					joints[3].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 0) {
+					joints[1].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 23) {
+					joints[2].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 9) {
+					joints[3].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				}  else if (data.position == 21) {
+					joints[4].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 5) {
+					joints[5].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 19) {
+					joints[6].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 17) {
+					joints[7].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 15) {
+					joints[8].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				} else if (data.position == 13) {
+					joints[9].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
+				}
+				*/
+
+				if (joints[2] != null) {
+
+					if (joints[3] != null) {
+						context.moveTo(joints[2].x, joints[2].y);
+						context.lineTo(joints[3].x, joints[3].y);
+
+						context.arc((joints[2].x + joints[3].x)/2,
+									(joints[2].y + joints[3].y)/2 - (joints[2].y - joints[3].y)*.75,
+									(joints[2].y - joints[3].y)*1.5,
+									0, Math.PI*2);
+
+						//console.log(joints[3].x + " " + joints[3].y + " : " + joints[2].x + " " + joints[2].y);
+					}
+
+					if (joints[20] != null) {
+						context.moveTo(joints[2].x, joints[2].y);
+						context.lineTo(joints[20].x, joints[20].y);
+
+						if (joints[1] != null) {
+							context.lineTo(joints[1].x, joints[1].y);
+							if (joints[17] != null) {
+								context.lineTo(joints[17].x, joints[17].y);
+								if (joints[19] != null) {
+									context.lineTo(joints[19].x, joints[19].y);
+								}
+							}
+							context.moveTo(joints[1].x, joints[1].y);
+							if (joints[13] != null) {
+								context.lineTo(joints[13].x, joints[13].y);
+								if (joints[15] != null) {
+									context.lineTo(joints[15].x, joints[15].y);
+								}
+							}
+						}
+						context.moveTo(joints[20].x, joints[20].y);
+						if (joints[9] != null) {
+							context.lineTo(joints[9].x, joints[9].y);
+							if (joints[23] != null) {
+								context.lineTo(joints[23].x, joints[23].y);
+							}
+						}
+						context.moveTo(joints[20].x, joints[20].y);
+						if (joints[5] != null) {
+							context.lineTo(joints[5].x, joints[5].y);
+							if (joints[21] != null) {
+								context.lineTo(joints[21].x, joints[21].y);
+							}
+						}
+					}
+				}
+
+				for (var d = 0; d < drawing.length; d++) {
+
+					context.strokeStyle=color;
+					context.moveTo(joints[3].x + drawing[d].startX,joints[3].y + drawing[d].startY);
+					context.lineWidth = 5;
+					context.lineTo(joints[3].x + drawing[d].endX,joints[3].y + drawing[d].endY);
+				}
+
+				context.stroke();
+
+			}
+
+			setInterval(clearDrawing, 1000/30);
+
+			document.addEventListener("DOMContentLoaded", initcanvas, false);
+
+
+		</script>
+		<style>
+			body {
+				background-color: #000000;
+			}
+			#canvas_div {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				width: 854px;
+				margin: 0, auto;
+				z-index: 2;
+			}
+
+			#canvas_other_div {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				width: 854px;
+				margin: 0, auto;
+				z-index: 1;
+			}
+
+			#text_div,#log {
+				position: absolute;
+				top: 500px;
+				width: 854px;
+				margin: 0, auto;
+				color: #dddddd;
+				font-size: large;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="content_wrapper">
+			<div id="canvas_div">
+				<canvas width="854" height="480" id="mycanvas"></canvas>
+			</div>
+			<div id="canvas_other_div">
+				<canvas width="854" height="480" id="mymousecanvas"></canvas>
+			</div>
+		</div>
+		<div id="log">
+		</div>
+	</body>
+</html>
