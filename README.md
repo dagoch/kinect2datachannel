@@ -1,7 +1,7 @@
 # kinect2datachannel
 Send Kinect v2 skeleton info to js web pages using WebRTC DataChannels.
 
-Based largely on Shawn Van Every's Microstories project: https://github.com/vanevery/microstorieslive_act2
+This project is extracted from Shawn Van Every's Microstories project for more general use.  The original project is here: https://github.com/vanevery/microstorieslive_act2
 
 How to Use
 ==========
