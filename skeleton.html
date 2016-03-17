@@ -1,12 +1,12 @@
 <html>
 	<head>
-		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-				<script src="js/peer.min.js"></script>
+
+		<script src="js/peer.min.js"></script>
 		<script type="text/javascript">
 			var joints = [];
 			var drawing = [];
 
-			var socket = io.connect();
+
 
 			var mypeerid = null;
 		  var peer = null;
@@ -27,19 +27,18 @@ peer = new Peer({key: 'uohu08l7r6swcdi'});
 			peer.on('connection', function(conn) {
 				connection = conn;
 				connection.on('open', function() {
-					document.getElementById('chatlog').innerHTML += "Connection Established";
+					document.getElementById('log').innerHTML += "Peer Connection Established";
 				});
 				connection.on('data', function(data) {
-					document.getElementById('chatlog').innerHTML += data;
+					document.getElementById('log').innerHTML += data;
 				});
 			});
 
 var kinectPeerId = "kinect";
 			connection = peer.connect(kinectPeerId); // get a webrtc DataConnection
 			connection.on('open', function(data) {
-				document.getElementById('chatlog').innerHTML += " CLIENT Connection Established";
-				console.log("OPen data connection with client");
-				showlog("OPen data connection with client");
+				console.log("Oen data connection with server");
+				showlog("Open data connection with server");
 			});
 
 			connection.on('data', function(data) {
@@ -52,31 +51,6 @@ var kinectPeerId = "kinect";
 			});
 
 
-			socket.on('connect', function() {
-				console.log("Connected");
-			});
-
-			// Receive mouse
-			socket.on('mouse', function (data) {
-				draw(data.startX, data.startY, data.endX, data.endY);
-				//drawing.push(data);
-			});
-
-			var sendmouse = function(startX, startY, endX, endY) {
-				socket.emit('mouse', {startX: startX, startY: startY, endX: endX, endY: endY, color: color});
-			};
-			var sendText = function(textToSend, x, y) {
-				socket.emit('text', {text: textToSend, x: x, y: y, color: color});
-			};
-
-			socket.on('clear', function (data) {
-				clearDrawing();
-			});
-
-			socket.on('kinect', function (data) {
-				joints[data.position] = {x: (data.x)*canvas.width/2+canvas.width/2,
-									y: (data.y*-1)*canvas.height/2+canvas.height/2};
-			});
 
 			///////////////
 			var mousecanvas;
@@ -189,47 +163,6 @@ var kinectPeerId = "kinect";
 				context.strokeStyle=color;
 				context.fillStyle=color;
 				context.lineWidth = 5;
-
-				/*
-				var lastJoint = null;
-				for (var i = 0; i < joints.length; i++) {
-					if (joints[i] != null) {
-						if (lastJoint == null) {
-							context.moveTo(joints[i].x,joints[i].y);
-							context.fillText(i,joints[i].x-5,joints[i].y-5);
-						}
-						else {
-							context.lineTo(joints[i].x,joints[i].y);
-							context.fillText(i,joints[i].x-5,joints[i].y-5);
-						}
-						lastJoint = joints[i];
-					}
-				}
-				*/
-
-				/*
-				if (data.position == 3) {
-					joints[3].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 0) {
-					joints[1].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 23) {
-					joints[2].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 9) {
-					joints[3].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				}  else if (data.position == 21) {
-					joints[4].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 5) {
-					joints[5].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 19) {
-					joints[6].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 17) {
-					joints[7].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 15) {
-					joints[8].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				} else if (data.position == 13) {
-					joints[9].position.set(kjoints[data.position].x, kjoints[data.position].y, 0);
-				}
-				*/
 
 				if (joints[2] != null) {
 
