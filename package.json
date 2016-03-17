@@ -1,4 +1,8 @@
 {
-  "name":"kinectpeer",
-  "main":"kinectpeer.html"
+  "name": "kinect2datachannel",
+  "main": "kinect2datachannel.html",
+  "dependencies": {
+    "osc-min": "^1.1.1",
+    "udp": "^1.0.0"
+  }
 }
